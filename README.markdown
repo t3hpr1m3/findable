@@ -9,7 +9,7 @@ You're developing a Rails application that gets it's data from an unsupported so
       attr_accessor :make
       attr_accessor :model
 
-      def get_cars
+      def self.get_cars
         list_of_cars = get_from_service_and_parse
       end
     end
@@ -28,11 +28,11 @@ Using Findable is easy.  Simply `include Findable` in the class, change `attr_ac
       findable_attribute :make
       findable_attribute :model
 
-      def findable_data
-        get_cars
+      def self.findable_data
+        self.get_cars
       end
 
-      def get_cars
+      def self.get_cars
         ...
       end
     end
