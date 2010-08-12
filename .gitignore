@@ -1,0 +1,15 @@
+log
+config/config.yml
+config/database.yml
+config/eft.yml
+coverage/*
+coverate/**/*
+tmp/*
+tmp/**/*
+doc/api
+doc/app
+db/*.sqlite3
+*.swp
+*.swo
+*~
+.DS_Store
