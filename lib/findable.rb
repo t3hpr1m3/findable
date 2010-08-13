@@ -12,12 +12,17 @@ module Findable
       attr_accessor name
     end
 
-    def findable_id_field
-      @@findable_id_field
+    def findable_method( name, wants_options = false )
+      @@findable_method = name
+      @@findable_method_wants_options = wants_options
     end
 
-    def findable_attributes
-      @@findable_attributes
+    def findable_data( options )
+      if @@findable_method_wants_options
+        send( @@findable_method, options )
+      else
+        send( @@findable_method )
+      end
     end
 
     def method_missing( method_id, *arguments )
@@ -27,7 +32,7 @@ module Findable
         finder = :last if $1 == 'last_by'
         finder = :all if $1 == 'all_by'
         name = $2
-        if findable_attributes.include?( name.to_sym )
+        if @@findable_attributes.include?( name.to_sym )
           self.class_eval %{
             def self.#{method_id}(*args)
               options = args.extract_options!
@@ -44,7 +49,7 @@ module Findable
     end
 
     def find_from_id( *args )
-      idf = findable_id_field
+      idf = @@findable_id_field
       if idf.nil?
         nil
       else
@@ -54,9 +59,9 @@ module Findable
 
     def select_from_findable( options )
       if options.keys.length == 0
-        self.findable_data
+        findable_data( options )
       else
-        self.findable_data.select { |s|
+        findable_data( options ).select { |s|
           is_match = true
           options.each { |key, value|
             t = s.instance_variable_get( "@#{key}" )
@@ -86,35 +91,47 @@ module Findable
       end
     end
 
-    def first( options )
+    def find_first( options )
       if options.keys.length == 0
-        findable_data.first
+        findable_data( options ).first
       else
         select_from_findable( options ).first
       end
     end
 
-    def last( options )
+    def find_last( options )
       if options.keys.length == 0
-        findable_data.last
+        findable_data( options ).last
       else
-        self.select_from_findable( options ).last
+        select_from_findable( options ).last
       end
     end
 
     def find( *args )
-      if self.findable_data.nil?
+      options = args.extract_options!
+      if findable_data( options ).nil?
         nil
       else
         finder = args.first
-        options = args.extract_options!
         case finder
-        when :first then self.first( options )
-        when :last then self.last( options )
+        when :first then find_first( options )
+        when :last then find_last( options )
         when :all then select_from_findable( options )
         else find_from_id( args.first, options )
         end
       end
+    end
+
+    def first( *args )
+      find( :first, *args )
+    end
+
+    def last( *args )
+      find( :last, *args )
+    end
+
+    def all( *args )
+      find( :all, *args )
     end
   end
 end
