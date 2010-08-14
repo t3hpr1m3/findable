@@ -19,7 +19,7 @@ You've wrapped all the dirty work of accessing the data store in the model, whic
 But what about filtering?  You could add a bunch of methods to your Car class, or add one `find` method that takes a hash of arguments.  But doing this on several models quickly becomes a pain.
 
 ## Documentation
-Using Findable is easy.  Simply `include Findable` in the class, change `attr_accessor` to `findable_attribute` for any attribute you want to be searchable, and add a `findable_data` method that returns an array of your objects.  Continuing the above example:
+Using Findable is easy.  Simply `include Findable` in the class, change `attr_accessor` to `findable_attribute` for any attribute you want to be searchable, and `findable_method`, padding it the method to use to retrieve an array of objects.  Continuing the above example:
 
     class Car
       include Findable
@@ -27,14 +27,7 @@ Using Findable is easy.  Simply `include Findable` in the class, change `attr_ac
       findable_attribute :year
       findable_attribute :make
       findable_attribute :model
-
-      def self.findable_data
-        self.get_cars
-      end
-
-      def self.get_cars
-        ...
-      end
+	  findable_data :get_cars
     end
 
 At this point, we can use find methods similar to ActiveRecord.
