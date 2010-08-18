@@ -1,27 +1,31 @@
 module Findable
   def self.included( base )
     base.send :extend, ClassMethods
+    base.send :class_inheritable_accessor, :_findable_attributes
+    base.send :class_inheritable_accessor, :_findable_id_field
+    base.send :class_inheritable_accessor, :_findable_method
+    base.send :class_inheritable_accessor, :_findable_method_wants_options
   end
 
   module ClassMethods
     def findable_attribute( name, id_field = false )
-      @@findable_attributes ||= []
-      @@findable_attributes << name
-      @@findable_id_field ||= nil
-      @@findable_id_field = name unless id_field == false
+      self._findable_attributes ||= []
+      self._findable_attributes << name
+      self._findable_id_field ||= nil
+      self._findable_id_field = name unless id_field == false
       attr_accessor name
     end
 
     def findable_method( name, wants_options = false )
-      @@findable_method = name
-      @@findable_method_wants_options = wants_options
+      self._findable_method = name
+      self._findable_method_wants_options = wants_options
     end
 
     def findable_data( options )
-      if @@findable_method_wants_options
-        send( @@findable_method, options )
+      if self._findable_method_wants_options
+        send( self._findable_method, options )
       else
-        send( @@findable_method )
+        send( self._findable_method )
       end
     end
 
@@ -32,7 +36,7 @@ module Findable
         finder = :last if $1 == 'last_by'
         finder = :all if $1 == 'all_by'
         name = $2
-        if @@findable_attributes.include?( name.to_sym )
+        if self._findable_attributes.include?( name.to_sym )
           self.class_eval %{
             def self.#{method_id}(*args)
               options = args.extract_options!
@@ -49,7 +53,7 @@ module Findable
     end
 
     def find_from_id( *args )
-      idf = @@findable_id_field
+      idf = self._findable_id_field
       if idf.nil?
         nil
       else
@@ -64,26 +68,28 @@ module Findable
         findable_data( options ).select { |s|
           is_match = true
           options.each { |key, value|
-            t = s.instance_variable_get( "@#{key}" )
-            case t
-            when Fixnum:
-              begin
-                v = value.to_i
-              rescue
-                is_match = false
+            if self._findable_attributes.include?( key.to_sym )
+              t = s.instance_variable_get( "@#{key}" )
+              case t
+              when Fixnum:
+                begin
+                  v = value.to_i
+                rescue
+                  is_match = false
+                end
+              when Float:
+                begin
+                  v = value.to_f
+                rescue
+                  is_match = false
+                end
+              else
+                v = value
               end
-            when Float:
-              begin
-                v = value.to_f
-              rescue
+              if t != v
                 is_match = false
+                break
               end
-            else
-              v = value
-            end
-            if t != v
-              is_match = false
-              break
             end
           }
           is_match
@@ -109,16 +115,13 @@ module Findable
 
     def find( *args )
       options = args.extract_options!
-      if findable_data( options ).nil?
-        nil
-      else
-        finder = args.first
-        case finder
-        when :first then find_first( options )
-        when :last then find_last( options )
-        when :all then select_from_findable( options )
-        else find_from_id( args.first, options )
-        end
+      puts "options: #{options.inspect}"
+      finder = args.first
+      case finder
+      when :first then find_first( options )
+      when :last then find_last( options )
+      when :all then select_from_findable( options )
+      else find_from_id( args.first, options )
       end
     end
 
