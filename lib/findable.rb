@@ -115,7 +115,6 @@ module Findable
 
     def find( *args )
       options = args.extract_options!
-      puts "options: #{options.inspect}"
       finder = args.first
       case finder
       when :first then find_first( options )
